@@ -29,7 +29,6 @@ h = 1.0
 master_dataset_o = []
 
 h_vals = []
-#h_vals = []
 #avg_obsv = []
 while h < 22:
     observable_array = []
