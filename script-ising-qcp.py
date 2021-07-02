@@ -7,18 +7,16 @@ import numpy as np
 from machine.rbm.real import RBMReal
 from hamiltonian import Ising
 from graph import Hypercube
-from sampler import Gibbs, MetropolisLocal
+from sampler import Gibbs
 from learner import Learner
 from logger import Logger
 from observable import *
 import matplotlib
 matplotlib.use('Agg')
-import os
-import pickle
-import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter
 
+#un-hash the observable_array in /logger/logger.py to run script-ising over different values of h.
 
 # System
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -29,11 +27,9 @@ h = 1.0
 master_dataset_o = []
 
 h_vals = []
-#abcd
-#avg_obsv = []
-while h < 22:
+while h < 16:
     observable_array = []
-    for iteration in range(1):
+    for iteration in range(1): #specify how many iterations per parameter h you want to average over
         ### Parameters for the graph of the model
         # length of the lattice
         lattice_length = 32
@@ -45,11 +41,7 @@ while h < 22:
         ### Parameters for the Hamiltonian
         # Type of the Hamiltonian
         hamiltonian_type = "ISING"
-        #hamiltonian_type = "HEISENBERG"
         # Parameters of the Hamiltonian
-       # h = 0.0
-        jx = 1.0
-        jy = 1.0
         jz = 2.0
 
         ### Parameters for the Sampler
@@ -93,8 +85,9 @@ while h < 22:
         visualize_weight = False
         visualize_visible = False
         visualize_freq = 10
-        # The list of observables that you wish to compute
-        observables = [MagnetizationZSquareFerro]#MagnetizationZ#, MagnetizationZSquareAntiFerro, CorrelationZ]
+        # The list of observables that you wish to compute and store in the observable_array which
+        # is to be plotted against the parameter
+        observables = [MagnetizationZSquareFerro]#MagnetizationZ#, MagnetizationZSquareAntiFerro, CorrelationZ
         # Indicate whether you want to see the weight different after and before training
         weight_diff = True
 
@@ -104,21 +97,16 @@ while h < 22:
         hamiltonian = None
         if hamiltonian_type == "ISING":
             hamiltonian = Ising(graph, jz, h)
-       # elif hamiltonian_type == "HEISENBERG":
-           # hamiltonian = Heisenberg(graph, jx, jy, jz)
 
-        ## Choose the type of sampler here
+        ## Sampler
         sampler = Gibbs(num_samples, num_steps)
-        #sampler = MetropolisExchange(num_samples, num_steps)
-        #sampler = MetropolisLocal(num_samples, num_steps)
         machine = RBMReal(graph.num_points, density, initializer, num_expe=iteration, use_bias=False)
         machine.create_variable()
 
         if use_dmrg_reference:
             if hamiltonian_type == "ISING":
                 refs = pickle.load(open('ising-energy-dmrg.p', 'r'))
-            elif hamiltonian_type == "HEISENBERG":
-                refs = pickle.load(open('heisenberg-dmrg-energy.p', 'r'))
+
             if lattice_length in refs:
                 if jz in refs[lattice_length]:
                     reference_energy = float(refs[lattice_length][jz])
@@ -134,65 +122,38 @@ while h < 22:
 
         # clear previous graph for multiple runs of learner
         tf.compat.v1.reset_default_graph()
-        #x = learner.calculate_observables['Mz']
-        #observable_array.append(x)  # specify what to plot against h
+
         sess.close()
 
     master_dataset_o.append(np.average(observable_array, axis=None, weights=None, returned=False) / lattice_length**2) #quantizing the Observable - in this case Mz^2 Ferro
     h_vals.append(h)
     if h < 2:
         h = h + 0.1
-    elif h > 2:
-        h = h + 0.25
-    elif h > 4:
-        h = h + 2
+    elif h < 3:
+        h = h + 0.2
+    elif h < 16:
+        h = h + 4
 
-    #avg_o = sum(observable_array) / 3.0
-    #master_dataset_o.append(avg_o)
 print(master_dataset_o)
 print (observable_array)
 print (h_vals)
-order_param = []
+paramjh = []
 for i in h_vals:
     if i != 0:
-        order_param.append(jz / i)
+        paramjh.append(jz / i)
 
 plt.figure()
-px = order_param
+px = paramjh
 oy = master_dataset_o
 plt.scatter(px,oy)
 plt.plot(px,oy)
-plt.title("Order Parameter vs. Observable")
-plt.xlabel("Order Parameter")
-plt.ylabel("Mz^2 Ferromagnetic")
+plt.title("Parameter vs. Observable")
+plt.xlabel("Parameter")
+plt.ylabel("Magnetisation Order Parameter Squared")
 plt.axvline(x = 1, ymin=0, ymax=1, linewidth=1, color='k', label='QCP')
 plt.legend(frameon=False)
 plt.show()
 plt.tight_layout()
-plt.savefig('./results' + '/%s-Order Parameter-observable-%05d.png')
+plt.savefig('./results' + '/%s-4,3,1.5-Parameter-Mz2F-%05d.png')
 plt.close()
 
-#finding the inflection point
-#obs_h = []
-#for i in range(len(h_vals)-1):
- #   obs_h.append([h_vals[i], master_dataset_o[i]])
-# smooth
-#smooth = gaussian_filter(obs_h, 100)
-
-# compute second derivative
-#smooth_d2 = np.gradient(np.gradient(smooth))
-
-# find switching points
-#infls = np.where(np.diff(np.sign(smooth_d2)))[0]
-
-# plot results
-#plt.plot(obs_h, label='Raw Data')
-#plt.plot(smooth, label='Smoothed Data')
-#plt.plot(smooth_d2 / np.max(smooth_d2), label='Second Derivative (scaled)')
-#for i, infl in enumerate(infls, 1):
- #   plt.axvline(x=infl, color='k', label='Inflection Point {i}')
-#plt.legend(bbox_to_anchor=(1.55, 1.0))
-#plt.show()
-#plt.tight_layout()
-#plt.savefig('./results' + '/%s-Inflection-%05d.png')
-#plt.close()

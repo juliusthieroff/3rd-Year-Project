@@ -7,16 +7,15 @@ import numpy as np
 from machine.rbm.real import RBMReal
 from hamiltonian import Ising
 from graph import Hypercube
-from sampler import Gibbs, MetropolisLocal
+from sampler import Gibbs
 from learner import Learner
 from logger import Logger
 from observable import *
 
+# Hash the observable_array in /logger/logger.py to run script-ising over different values of h.
+
 # System
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-#np.random.seed(123)
-#tf.set_random_seed(123)
-
 
 for iteration in range(1):
     ### Parameters for the graph of the model
@@ -30,11 +29,8 @@ for iteration in range(1):
     ### Parameters for the Hamiltonian
     # Type of the Hamiltonian
     hamiltonian_type = "ISING"
-    #hamiltonian_type = "HEISENBERG"
     # Parameters of the Hamiltonian
-    h = 1.0
-    jx = 1.0
-    jy = 1.0
+    h = 0.1
     jz = 2.0
 
     ### Parameters for the Sampler
@@ -89,21 +85,16 @@ for iteration in range(1):
     hamiltonian = None
     if hamiltonian_type == "ISING":
         hamiltonian = Ising(graph, jz, h)
-   # elif hamiltonian_type == "HEISENBERG":
-       # hamiltonian = Heisenberg(graph, jx, jy, jz)
 
-    ## Choose the type of sampler here
+    ## Sampler
     sampler = Gibbs(num_samples, num_steps)
-    #sampler = MetropolisExchange(num_samples, num_steps)
-    #sampler = MetropolisLocal(num_samples, num_steps)
     machine = RBMReal(graph.num_points, density, initializer, num_expe=iteration, use_bias=False)
     machine.create_variable()
 
     if use_dmrg_reference:
         if hamiltonian_type == "ISING":
             refs = pickle.load(open('ising-energy-dmrg.p', 'r'))
-        elif hamiltonian_type == "HEISENBERG":
-            refs = pickle.load(open('heisenberg-dmrg-energy.p', 'r'))
+
         if lattice_length in refs:
             if jz in refs[lattice_length]:
                 reference_energy = float(refs[lattice_length][jz])

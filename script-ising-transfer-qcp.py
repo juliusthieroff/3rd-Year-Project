@@ -27,11 +27,11 @@ master_dataset_o = []
 h_vals = []
 #h_vals = []
 #avg_obsv = []
-while h < 22:
+while h < 16:
     observable_array = []
     for iteration in range(1):
         # Graph
-        lattice_length = 32
+        lattice_length = 16
         dimension = 1
         pbc = False
         if pbc:
@@ -69,9 +69,9 @@ while h < 22:
 
         #### The parameter for the transfer learning method
         # transfer (k,p)-tiling, p is defined automatically
-        k_val = 1  # (1,2)-tiling
+        #k_val = 1  # (1,2)-tiling
         #k_val = 2 # (2,2)-tiling
-        #k_val = lattice_length / 2# (L,p)-tiling
+        k_val = lattice_length / 2# (L,p)-tiling
 
         # Logger
         log = True
@@ -96,9 +96,9 @@ while h < 22:
 
         if hamiltonian_type == "ISING":
             if lattice_length == 8:
-                transfer = RBMTransfer(machine, graph, '%sising_%dd_%d_%d_%.2f_1.00_%s/cold-start/' % (result_path, dimension, lattice_length / 2, density, jz, pbc_str), iteration)
+                transfer = RBMTransfer(machine, graph, '%sising_%dd_%d_%d_%.2f_1.50_%s/cold-start/' % (result_path, dimension, lattice_length / 2, density, jz, pbc_str), iteration)
             else:
-                transfer = RBMTransfer(machine, graph, '%sising_%dd_%d_%d_%.2f_1.00_%s/%s/' % (result_path, dimension, lattice_length / 2, density, jz, pbc_str, subpath), iteration)
+                transfer = RBMTransfer(machine, graph, '%sising_%dd_%d_%d_%.2f_1.50_%s/%s/' % (result_path, dimension, lattice_length / 2, density, jz, pbc_str, subpath), iteration)
         elif hamiltonian_type == "HEISENBERG":
             if lattice_length == 8:
                 transfer = RBMTransfer(machine, graph, '%sheisenberg_%dd_%d_%d_1.00_1.00_%.2f_%s/cold-start/' % (result_path, dimension, lattice_length / 2, density, jz, pbc_str), iteration)
@@ -136,8 +136,12 @@ while h < 22:
         sess.close()
     master_dataset_o.append(np.average(observable_array, axis=None, weights=None, returned=False) / lattice_length**2) #quantizing the Observable - in this case Mz^2 Ferro
     h_vals.append(h)
-
-    h = 1.1 * h
+    if h < 2:
+        h = h + 0.1
+    elif h < 3:
+        h = h + 0.2
+    elif h < 16:
+        h = h + 4
 
     #avg_o = sum(observable_array) / 3.0
     #master_dataset_o.append(avg_o)
@@ -161,7 +165,7 @@ plt.axvline(x = 1, ymin=0, ymax=1, linewidth=1, color='k', label='QCP')
 plt.legend(frameon=False)
 plt.show()
 plt.tight_layout()
-plt.savefig('./results' + '/%s-Order Parameter-observable-%05d.png')
+plt.savefig('./results' + '/%s-transfer8v3-1.5-Order Parameter-observable-%05d.png')
 plt.close()
 
 #finding the inflection point

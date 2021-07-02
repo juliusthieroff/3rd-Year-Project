@@ -24,7 +24,7 @@ class Logger(object):
         self.visualize_visible = visualize_visible
         self.visualize_freq = visualize_freq
         self.observables = observables
-        self.observable_array = observable_array
+       #self.observable_array = observable_array
         self.weight_diff = weight_diff
 
 
@@ -35,13 +35,11 @@ class Logger(object):
             self.print_model(learner)
             self.visualize_energy(learner)
             self.write_logs(learner)
-            self.rel_er(learner)
             self.relative_errors(learner)
             self.iter_burns(learner)
             self.ge_skew(learner)
             self.ge_kurtosis(learner)
             self.visualize_params(learner)
-            self.visualize_weights_rbm_alt = self.visualize_weights_rbm_alt(learner)
             if self.visualize_visible:
                 self.visualize_visible_rbm(learner)
             if self.observables is not None and len(self.observables) > 0:
@@ -160,8 +158,8 @@ class Logger(object):
         for obs in self.observables:
             observ = obs(prob_out, confs, learner.machine.num_visible)
             obs_value = observ.get_value()
-            filename = observ.get_name() + '.txt'
-            self.observable_array.append(obs_value)
+            #filename = observ.get_name() + '.txt'
+            #self.observable_array.append(obs_value)
             ff = open(self.result_path + filename, 'w')
             ff.write(str(obs_value.tolist()))
             ff.close()
@@ -215,18 +213,6 @@ class Logger(object):
             len(ground_energys) - 1, np.sum(times), ground_energys[-1], ground_energy_stds[-1]))
         ff.close()
 
-    def rel_er(self, learner):
-        rel_errors = learner.rel_errors
-        filename = 'Relative Error.txt'
-        path = self.result_path + filename
-        ff = open(path, 'w')
-        ff.write(
-            'epoch, rel_error\n')
-        for ep, (re) in enumerate(
-                zip(rel_errors)):
-            ff.write('%.5f\n' % re)
-        ff.close()
-
 
     def calculate_weight_difference(self, learner):
         filename = 'weight_diff.txt'
@@ -258,15 +244,6 @@ class Logger(object):
 
         for epoch, title, w in learner.rbm_weights:
             self.visualize_weights_scat(w.real, path, epoch, title, learner)
-
-
-    def visualize_weights_rbm_alt(self, learner):
-        path = self.result_path + '/weights/'
-        if not os.path.exists(path):
-            os.makedirs(path)
-
-        for epoch, title, w in learner.rbm_weights:
-            self.visualize_weights_alter(w.real, path, epoch, title, learner)
 
 
     def histo_weights_rbm(self, learner):
@@ -395,40 +372,13 @@ class Logger(object):
         plt.savefig(self.result_path + '/ground_energy_kurtosis-iter.png')
         plt.close()
 
-
-    def visualize_weights_alter(self, weight, path, epoch=0, title='', learner=None):
+    def histogram(self, weight, path, epoch=1000, title='', learner=None):
         w = np.real(weight)
         plt.figure(figsize=(20, 10))
         plt.title('Weights %05d, %s, %s, %s' % (epoch, str(learner.hamiltonian), str(learner.machine), title))
-        plt.imshow(w, cmap='plasma', interpolation='lanczos', vmin=-2.0, vmax=2.0)
-        plt.xlabel('Hidden node')
-        plt.ylabel('Visible node')
-        plt.xticks(np.arange(0, w.shape[1], 1.0))
-        plt.yticks(np.arange(0, w.shape[0], 1.0))
-        plt.colorbar()
-        plt.tight_layout()
-        plt.savefig(path + '/weights-alt-%05d.png' % epoch)
-        plt.close()
-
-    #def visualize_weights_scat(self, weight, path, epoch=0, title='', learner=None):
-     #   w = np.real(weight, learner.rbm_weights)
-    #    plt.scatter(w)
-  #      plt.ax.set_xlabel(r'$\Hidden_i$', fontsize=15)
- #       plt.ax.set_ylabel(r'$\Visible_{i+1}$', fontsize=15)
-   #     plt.ax.set_title('Scatterplot of weights')
-    #    plt.ax.grid(True)
-     #   plt.fig.tight_layout()
-      #  plt.savefig(path + '/weights-alt-%05d.png' % epoch)
-       # plt.close()
-
-
-    def histo(self, weight, path, epoch=1000, title='', learner=None):
-        w = np.real(weight)
-        plt.figure(figsize=(20, 10))
-        plt.title('Weights %05d, %s, %s, %s' % (epoch, str(learner.hamiltonian), str(learner.machine), title))
-        plt.xlabel('Hidden node')
+        plt.xlabel('Weight')
         plt.ylabel('Visible node')
         plt.hist(w)
         plt.tight_layout()
-        plt.savefig(path + '/histo-%05d.png' % epoch)
+        plt.savefig(path + '/histogram-%05d.png' % epoch)
         plt.close()

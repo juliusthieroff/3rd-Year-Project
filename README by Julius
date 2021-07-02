@@ -1,0 +1,21 @@
+ Original code by Remmy Zen available under:
+ https://github.com/remmyzen/nqs-tensorflow
+ 
+In this version I have removed the Heisenberg hamiltonian and all related code to keep
+concise. 
+
+Things I have added to the original:
+
+*script-ising-qcp.py
+        loops script-ising.py over a range of h values and calculates averages of 
+        multiple iterations per h value. Plots order parameter against parameter J/|h|.
+
+*added to logger/logger.py
+        added an array of the computed observables for script-ising-qcp.py
+        added plots:
+                    *histogram
+                    *ge_kurtosis
+                    *ge_skew
+                    *iter_burns
+                    *relative_errors
+    
